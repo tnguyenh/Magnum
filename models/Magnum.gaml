@@ -10,6 +10,8 @@ model Magnum
 /* Insert your model definition here */
 
 global{
+	
+	file boundary_shape_file <- file("../includes/gis/KajiadoWGS1984.shp");
 	file area_shape_file <- file("../includes/gis/kajiado_ranch_2010.shp");
 	file giraffe_shape_file <- file("../includes/gis/Giraffemean.shp");
 	file zebra_wildebeest_file <-file("../includes/gis/WildebeestZebra.shp");
@@ -20,6 +22,8 @@ global{
 		create ranch from: area_shape_file with:[name::string(read("R_NAME"))]{
 			self.color <- rnd_color(255);
 		}
+		
+		create boundary from: boundary_shape_file;
 		
 		ranch_names <- ranch collect(each.name);
 		write ranch_names;
@@ -57,6 +61,14 @@ species ranch{
 	}	
 }
 
+species boundary{
+	
+	
+	
+	aspect base{
+		draw shape color:°blue ;
+	}	
+}
 
 species animal skills:[moving]{
 	/* unit: herd  */
@@ -72,7 +84,7 @@ species animal skills:[moving]{
 	}
 	
 	reflex move{
-		do wander speed: 1000.0 bounds: world.shape;// bounds: geometry_collection(ranch collect(each.shape));
+		do wander speed: 1000.0 bounds: first(boundary).shape;// bounds: geometry_collection(ranch collect(each.shape));
 	}
 	
 }
@@ -94,6 +106,7 @@ experiment simulation type: gui {
 		display environment{
 			species ranch aspect: base;
 			species animal aspect: base;
+			//species boundary aspect: base;
 		}
 	// Define inspectors, browsers and displays here
 	
