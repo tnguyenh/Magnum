@@ -11,7 +11,7 @@ model Magnum
 
 global{
 	
-	file boundary_shape_file <- file("../includes/gis/KajiadoWGS1984.shp");
+	file boundary_shape_file <- file("../includes/gis/boundaries.shp");
 	file area_shape_file <- file("../includes/gis/kajiado_ranch_2010.shp");
 	file giraffe_shape_file <- file("../includes/gis/Giraffemean.shp");
 	file zebra_wildebeest_file <-file("../includes/gis/WildebeestZebra.shp");
