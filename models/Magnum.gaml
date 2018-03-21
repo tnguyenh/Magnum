@@ -12,6 +12,7 @@ model Magnum
 global{
 	file area_shape_file <- file("../includes/gis/kajiado_ranch_2010.shp");
 	file giraffe_shape_file <- file("../includes/gis/Giraffemean.shp");
+	file zebra_wildebeest_file <-file("../includes/gis/WildebeestZebra.shp");
 	geometry shape <- envelope(area_shape_file);
 	list<string> ranch_names;
 	
@@ -25,9 +26,19 @@ global{
 		write "There are "+ length(ranch_names) + " ranches.";
 		
 		create animal from:  giraffe_shape_file with: [density::float(read("Giraffe"))]{
+			species_name <-"Giraffe"; 
 			color <- °yellow;
 		}
+		 
+		create animal from:  zebra_wildebeest_file with: [density::float(read("Zebra"))]{
+			species_name<-"Zebra";
+			color <- °purple;
+		}
 		
+		create animal from:  zebra_wildebeest_file with: [density::float(read("Wildebeest"))]{
+			species_name<-"Wildebeest";
+			color <- °green;
+		}
 	}
 	
 	aspect base{draw shape color: °blue;}
@@ -50,18 +61,18 @@ species ranch{
 species animal skills:[moving]{
 	/* unit: herd  */
 	string species_name;
-	float density <- 0;
+	float density <- 0.0;
 	float grazing_efficiency;
 	ranch my_ranch;
 	rgb color;
 	
 	aspect base{
-		draw circle(sqrt(density)*500) color: °yellow;
+		draw circle(sqrt(density)*500) color: color;
 
 	}
 	
 	reflex move{
-		do wander speed: 1000 bounds: world.shape;// bounds: geometry_collection(ranch collect(each.shape));
+		do wander speed: 1000.0 bounds: world.shape;// bounds: geometry_collection(ranch collect(each.shape));
 	}
 	
 }
