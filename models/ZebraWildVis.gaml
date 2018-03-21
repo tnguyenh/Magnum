@@ -1,7 +1,7 @@
 
 model ZebraWildVis
 
-/* Insert your model definition here */
+/* Insert your model definition here  updated in  Lyon 2018 Victor Mose*/
 
 global {
 	file shape_file_grass <- file("../includes/gis/gridsngreen.shp");
