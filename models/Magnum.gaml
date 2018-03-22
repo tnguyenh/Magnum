@@ -22,11 +22,17 @@ global{
 	map<string,rgb> species_colormap <- ["Zebra"::#purple,"Giraffe"::#yellow,"Wildebeest"::#brown];
 	
 	bool show_ndvi <- true;
+	bool show_densities <- false;
 	
 	list<string> ranch_names;
-	//float mean_ndvi;
-	//list<float> mean_populations;
 	map<string,float> correlations;
+	
+	
+	int heightImg const: true <- 5587;
+	int widthImg const: true <- 6201;	
+	
+	
+	 
 	
 	init{
 		create ranch from: area_shape_file with:[name::string(read("R_NAME"))]{
@@ -62,9 +68,6 @@ global{
 	
 	reflex statistics{
 		loop sp over: species_list {
-			//write sp;
-			//write first(grid_cell).pop_densities;
-			//write(grid_cell collect(each.pop_densities[sp]));
 			correlations[sp] <- correlation(grid_cell collect(each.ndvi), grid_cell collect(each.pop_densities[sp]));
 			write "Correlation for "+sp+": "+correlations[sp];
 		}
@@ -99,11 +102,13 @@ species animal skills:[moving]{
 	rgb color;
 	
 	aspect base{
-		draw circle(sqrt(density)*500) color: species_colormap[species_name];
+		if !show_densities{
+			draw circle(sqrt(density)*500) color: species_colormap[species_name];
+		}
 	}
 	
 	reflex move{
-		do wander speed: 1000.0 bounds: first(boundary).shape;// bounds: geometry_collection(ranch collect(each.shape));
+		do wander speed: 300.0 bounds: first(boundary).shape;// bounds: geometry_collection(ranch collect(each.shape));
 	}
 }
 
@@ -116,6 +121,13 @@ species grid_cell {
 		if show_ndvi{
 			draw shape color: rgb(220-220*ndvi/10000,220,220-220*ndvi/10000);
 		}
+		if show_densities{
+			loop sp over: species_list {
+				if pop_densities[sp] > 0 {// sinon cela affiche un petit carre. Bug Gama ?
+					draw circle(sqrt(pop_densities[sp])*500) color: species_colormap[sp];
+				}
+			}
+		}
 	}
 	
 	reflex compute_pop_densities{
@@ -126,11 +138,15 @@ species grid_cell {
 	}
 }
 
+grid cell  width: 205#m height: 250#m;
+
+
 experiment simulation type: gui {
 
 	
 	// Define parameters here if necessary
-	parameter "Sow NDVI" category:"Display" var: show_ndvi;
+	parameter "Show NDVI" category:"Display" var: show_ndvi;
+	parameter "Show animal densities" category:"Display" var: show_densities;
 	// parameter "My parameter" category: "My parameters" var: one_global_attribute;
 	
 	// Define attributes, actions, a init section and behaviors if necessary
@@ -140,6 +156,7 @@ experiment simulation type: gui {
 	output {
 		
 		display environment{
+			grid cell lines: rgb("black") ;
 			species ranch aspect: base;
 			species grid_cell aspect: ndvi;
 			species animal aspect: base;
