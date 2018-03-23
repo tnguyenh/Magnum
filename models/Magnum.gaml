@@ -11,7 +11,7 @@ model Magnum
 
 global{
 	// one cycle = 8 days;
-	float step <- 8 #day;
+	//float step <- 8 #day;
 	
 	file boundary_shape_file <- file("../includes/gis/boundaries.shp");
 	file area_shape_file <- file("../includes/gis/kajiado_ranch_2010.shp");
@@ -32,8 +32,8 @@ global{
 	map<string,float> correlations;
 	
 	file animal_data_file <- file("../includes/gis/Animal_data/animals_utm.shp");
-	date starting_date;
-	date end_date;
+//	date starting_date;
+//	date end_date;
 	
 
 	 
@@ -71,31 +71,31 @@ global{
 			species_name<-"Wildebeest";
 		}
 		
-		create animal_data from: animal_data_file with: 
-				[//day::date(string(get("COUNT")),'d/M/yyyy'), 
-				tmp::string(get("COUNT")),
-				zebra_pop::float(get("Zebra")),
-				wildebeest_pop::float(get("Wildebeest")),
-				giraffe_pop::float(get("Giraffe"))]{
-				write tmp;
-		}
+//		create animal_data from: animal_data_file with: 
+//				[//day::date(string(get("COUNT")),'d/M/yyyy'), 
+//				tmp::string(get("COUNT")),
+//				zebra_pop::float(get("Zebra")),
+//				wildebeest_pop::float(get("Wildebeest")),
+//				giraffe_pop::float(get("Giraffe"))]{
+//				write tmp;
+//		}
 			
 			
-		starting_date <- first(animal_data).day;
-//		write min(animal_data collect(each.day)); // min ne marche pas avec date, poster une issue Gama
-		end_date <- last(animal_data).day;
-		write "Start date: "+starting_date;
-		write "End date: "+end_date;
+//		starting_date <- first(animal_data).day;
+////		write min(animal_data collect(each.day)); // min ne marche pas avec date, poster une issue Gama
+//		end_date <- last(animal_data).day;
+//		write "Start date: "+starting_date;
+//		write "End date: "+end_date;
 		
 	}
 	
-	  reflex info_date {
-        write "current_date at cycle " + cycle + " : " + current_date;
-        if end_date<current_date{
-        	write "Simulation has ended.";
-        }
-        
-    }
+//	  reflex info_date {
+//        write "current_date at cycle " + cycle + " : " + current_date;
+//        if end_date<current_date{
+//        	write "Simulation has ended.";
+//        }
+//        
+//    }
 	
 	
 	reflex statistics{
@@ -140,7 +140,7 @@ species animal skills:[moving]{
 	}
 	
 	reflex move{
-		do wander speed: 300.0 bounds: first(boundary).shape;// bounds: geometry_collection(ranch collect(each.shape));
+		do wander speed: 3000.0;// bounds: first(boundary).shape;// bounds: geometry_collection(ranch collect(each.shape));
 	}
 }
 
@@ -178,22 +178,22 @@ species grid_cell {
 
 
 
-species animal_data{
-	date day;
-	map<string,float> pop_count;
-	float zebra_pop;
-	float wildebeest_pop;
-	float giraffe_pop;
-	string tmp;
-	
-	aspect base{
-		if true {//(day >= current_date) and (day < current_date + step) and (show_animal_data) {
-			draw circle(sqrt(zebra_pop)*500) color: #red;//species_colormap["Zebra"];
-			draw circle(sqrt(wildebeest_pop)*500) color: #red;// species_colormap["Wildebeest"];		
-			draw circle(sqrt(giraffe_pop)*500) color: #red;//species_colormap["Giraffe"];	
-		}
-	}
-}
+//species animal_data{
+//	date day;
+//	map<string,float> pop_count;
+//	float zebra_pop;
+//	float wildebeest_pop;
+//	float giraffe_pop;
+//	string tmp;
+//	
+//	aspect base{
+//		if false {//(day >= current_date) and (day < current_date + step) and (show_animal_data) {
+//			draw circle(sqrt(zebra_pop)*500) color: #red;//species_colormap["Zebra"];
+//			draw circle(sqrt(wildebeest_pop)*500) color: #red;// species_colormap["Wildebeest"];		
+//			draw circle(sqrt(giraffe_pop)*500) color: #red;//species_colormap["Giraffe"];	
+//		}
+//	}
+//}
 
 
 experiment simulation type: gui {
@@ -216,7 +216,7 @@ experiment simulation type: gui {
 			species ranch aspect: base;
 			species grid_cell aspect: ndvi;
 			species animal aspect: base;
-			species animal_data aspect: base;
+//			species animal_data aspect: base;
 	//		grid cell lines: rgb("black") ;
 			//species boundary aspect: base;
 		}
