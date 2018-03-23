@@ -89,13 +89,12 @@ global{
 		
 	}
 	
-	  reflex info_date {
-        write "current_date at cycle " + cycle + " : " + current_date;
-        if end_date<current_date{
-        	write "Simulation has ended.";
-        }
-        
-    }
+//	  reflex info_date {
+//        write "current_date at cycle " + cycle + " : " + current_date;
+//        if end_date<current_date{
+//        	write "Simulation has ended.";
+//        }
+//    }
 	
 	
 	reflex statistics{
@@ -105,6 +104,8 @@ global{
 //		}
 //		write " ";
 	}
+
+
 
 }
 
@@ -140,8 +141,13 @@ species animal skills:[moving]{
 	}
 	
 	reflex move{
-		do wander speed: 300.0 bounds: first(boundary).shape;// bounds: geometry_collection(ranch collect(each.shape));
+		do wander speed: 1000.0 bounds: first(boundary).shape;// bounds: geometry_collection(ranch collect(each.shape));
+	
+	
+	
 	}
+	
+	
 }
 
 species grid_cell {
@@ -187,7 +193,7 @@ species animal_data{
 	string tmp;
 	
 	aspect base{
-		if true {//(day >= current_date) and (day < current_date + step) and (show_animal_data) {
+		if false {//(day >= current_date) and (day < current_date + step) and (show_animal_data) {
 			draw circle(sqrt(zebra_pop)*500) color: #red;//species_colormap["Zebra"];
 			draw circle(sqrt(wildebeest_pop)*500) color: #red;// species_colormap["Wildebeest"];		
 			draw circle(sqrt(giraffe_pop)*500) color: #red;//species_colormap["Giraffe"];	
