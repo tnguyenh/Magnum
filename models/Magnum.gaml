@@ -10,12 +10,15 @@ model Magnum
 /* Insert your model definition here */
 
 global{
+	// one cycle = 8 days;
+	float step <- 8 #day;
 	
 	file boundary_shape_file <- file("../includes/gis/boundaries.shp");
 	file area_shape_file <- file("../includes/gis/kajiado_ranch_2010.shp");
 	file giraffe_shape_file <- file("../includes/gis/Giraffemean.shp");
 	file zebra_wildebeest_file <-file("../includes/gis/WildebeestZebra.shp");
 	file ndvi_file <- file("../includes/gis/Amboseli_Centroids_NDVI.shp");
+	file ndvi_asc_file <- file("../includes/gis/mod13q1_ndvi_2000_273.txt");
 	geometry shape <- envelope(area_shape_file);
 	
 	list<string> species_list <-["Zebra","Giraffe","Wildebeest"];
@@ -23,18 +26,24 @@ global{
 	
 	bool show_ndvi <- true;
 	bool show_densities <- false;
+	bool show_animal_data <- true;
 	
 	list<string> ranch_names;
 	map<string,float> correlations;
 	
+	file animal_data_file <- file("../includes/gis/Animal_data/animals_utm.shp");
+	date starting_date;
+	date end_date;
 	
-	int heightImg const: true <- 5587;
-	int widthImg const: true <- 6201;	
-	
-	
+
 	 
 	
-	init{
+	init{		
+//		ask cell {		
+//			color <-rgb( (mntImageRaster) at {grid_x,grid_y}) ;
+//		}
+		
+		
 		create ranch from: area_shape_file with:[name::string(read("R_NAME"))]{
 			self.color <- rnd_color(255);
 		}
@@ -61,17 +70,40 @@ global{
 		create animal from:  zebra_wildebeest_file with: [density::float(read("Wildebeest"))]{
 			species_name<-"Wildebeest";
 		}
+		
+		create animal_data from: animal_data_file with: 
+				[//day::date(string(get("COUNT")),'d/M/yyyy'), 
+				tmp::string(get("COUNT")),
+				zebra_pop::float(get("Zebra")),
+				wildebeest_pop::float(get("Wildebeest")),
+				giraffe_pop::float(get("Giraffe"))]{
+				write tmp;
+		}
+			
+			
+		starting_date <- first(animal_data).day;
+//		write min(animal_data collect(each.day)); // min ne marche pas avec date, poster une issue Gama
+		end_date <- last(animal_data).day;
+		write "Start date: "+starting_date;
+		write "End date: "+end_date;
+		
 	}
 	
-	aspect base{draw shape color: °blue;}
+	  reflex info_date {
+        write "current_date at cycle " + cycle + " : " + current_date;
+        if end_date<current_date{
+        	write "Simulation has ended.";
+        }
+        
+    }
 	
 	
 	reflex statistics{
-		loop sp over: species_list {
-			correlations[sp] <- correlation(grid_cell collect(each.ndvi), grid_cell collect(each.pop_densities[sp]));
-			write "Correlation for "+sp+": "+correlations[sp];
-		}
-		write " ";
+//		loop sp over: species_list {
+//			correlations[sp] <- correlation(grid_cell collect(each.ndvi), grid_cell collect(each.pop_densities[sp]));
+//			write "Correlation for "+sp+": "+correlations[sp];
+//		}
+//		write " ";
 	}
 
 }
@@ -113,8 +145,8 @@ species animal skills:[moving]{
 }
 
 species grid_cell {
-	float ndvi <- 0;
-	map<string,float> pop_densities<-["Zebra"::0,"Giraffe"::0,"Wildebeest"::0];
+	float ndvi <- 0.0;
+	map<string,float> pop_densities<-["Zebra"::0.0,"Giraffe"::0.0,"Wildebeest"::0.0];
 	geometry shape <- square(5#km);
 	
 	aspect ndvi{
@@ -130,15 +162,38 @@ species grid_cell {
 		}
 	}
 	
-	reflex compute_pop_densities{
-		loop sp over: species_list{
-			pop_densities[sp] <- sum((animal where(each.species_name = sp) overlapping self) accumulate (each.density));
-		}
-		//write 'essai'+pop_densities;
-	}
+//	reflex compute_pop_densities{
+//		loop sp over: species_list{
+//			pop_densities[sp] <- sum((animal where(each.species_name = sp) overlapping self) accumulate (each.density));
+//		}
+//	}
 }
 
-grid cell  width: 205#m height: 250#m;
+
+//grid cell file: ndvi_asc_file{
+//	init {
+//		color<- rgb(0,grid_value * 250/10000,0);
+//	}
+//}
+
+
+
+species animal_data{
+	date day;
+	map<string,float> pop_count;
+	float zebra_pop;
+	float wildebeest_pop;
+	float giraffe_pop;
+	string tmp;
+	
+	aspect base{
+		if true {//(day >= current_date) and (day < current_date + step) and (show_animal_data) {
+			draw circle(sqrt(zebra_pop)*500) color: #red;//species_colormap["Zebra"];
+			draw circle(sqrt(wildebeest_pop)*500) color: #red;// species_colormap["Wildebeest"];		
+			draw circle(sqrt(giraffe_pop)*500) color: #red;//species_colormap["Giraffe"];	
+		}
+	}
+}
 
 
 experiment simulation type: gui {
@@ -147,6 +202,7 @@ experiment simulation type: gui {
 	// Define parameters here if necessary
 	parameter "Show NDVI" category:"Display" var: show_ndvi;
 	parameter "Show animal densities" category:"Display" var: show_densities;
+	parameter "Show animal data" category:"Display" var: show_animal_data;
 	// parameter "My parameter" category: "My parameters" var: one_global_attribute;
 	
 	// Define attributes, actions, a init section and behaviors if necessary
@@ -156,10 +212,12 @@ experiment simulation type: gui {
 	output {
 		
 		display environment{
-			grid cell lines: rgb("black") ;
+			
 			species ranch aspect: base;
 			species grid_cell aspect: ndvi;
 			species animal aspect: base;
+			species animal_data aspect: base;
+	//		grid cell lines: rgb("black") ;
 			//species boundary aspect: base;
 		}
 	}

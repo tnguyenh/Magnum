@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata xml:lang="en"><Esri><CreaDate>20180322</CreaDate><CreaTime>18080900</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce><DataProperties><lineage><Process Name="Raster to ASCII" ToolSource="c:\program files (x86)\arcgis\desktop10.6\ArcToolbox\Toolboxes\Conversion Tools.tbx\RasterToASCII" Date="20180322" Time="180809">RasterToASCII C:\MAGNUMRYAN\MODIS_FOR_MODEL_REPROJ\MOD13Q1_NDVI_2006_081.tif C:\MAGNUMRYAN\MODIS_ASCII\MOD13Q1_NDVI_2006_081.tif.TXT</Process></lineage></DataProperties></Esri></metadata>
