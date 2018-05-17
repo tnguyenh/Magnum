@@ -7,22 +7,25 @@
 
 model Magnum
 
-/* Insert your model definition here */
+/* Model framework for Magnum */
 
 global{
 	// one cycle = 8 days;
-	//float step <- 8 #day;
+	float step <- 8 #day;
 	
 	file boundary_shape_file <- file("../includes/gis/boundaries.shp");
 	file area_shape_file <- file("../includes/gis/kajiado_ranch_2010.shp");
 	file giraffe_shape_file <- file("../includes/gis/Giraffemean.shp");
 	file zebra_wildebeest_file <-file("../includes/gis/WildebeestZebra.shp");
 	file ndvi_file <- file("../includes/gis/Amboseli_Centroids_NDVI.shp");
-	file ndvi_asc_file <- file("../includes/gis/mod13q1_ndvi_2000_273.txt");
-	geometry shape <- envelope(area_shape_file);
+	file ndvi_asc_file <- file("../includes/gis/MODIS_ASCII/mod13q1_ndvi_2000_273.asc");
+//	geometry shape <- envelope(area_shape_file);
+	geometry shape <- envelope(giraffe_shape_file);
+	
 	
 	list<string> species_list <-["Zebra","Giraffe","Wildebeest"];
 	map<string,rgb> species_colormap <- ["Zebra"::#purple,"Giraffe"::#yellow,"Wildebeest"::#brown];
+	map<string,int> month_to_int <- ["Jan"::1,"Feb"::2,"Mar"::3,"Apr"::4,"May"::5,"Jun"::6,"Jul"::7,"Aug"::8,"Sep"::9,"Oct"::10,"Nov"::11,"Dec"::12];
 	
 	bool show_ndvi <- true;
 	bool show_densities <- false;
@@ -32,8 +35,10 @@ global{
 	map<string,float> correlations;
 	
 	file animal_data_file <- file("../includes/gis/Animal_data/animals_utm.shp");
-//	date starting_date;
-//	date end_date;
+	
+	list<date> count_dates;
+	date starting_date;
+	date end_date;
 	
 
 	 
@@ -71,31 +76,56 @@ global{
 			species_name<-"Wildebeest";
 		}
 		
-//		create animal_data from: animal_data_file with: 
-//				[//day::date(string(get("COUNT")),'d/M/yyyy'), 
-//				tmp::string(get("COUNT")),
-//				zebra_pop::float(get("Zebra")),
-//				wildebeest_pop::float(get("Wildebeest")),
-//				giraffe_pop::float(get("Giraffe"))]{
-//				write tmp;
-//		}
-			
-			
-//		starting_date <- first(animal_data).day;
-////		write min(animal_data collect(each.day)); // min ne marche pas avec date, poster une issue Gama
-//		end_date <- last(animal_data).day;
-//		write "Start date: "+starting_date;
-//		write "End date: "+end_date;
+		create animal_data from: animal_data_file with: 
+				[//day::date(string(get("COUNT")),'d/M/yyyy'), 
+				tmp::string(get("COUNT")),
+				zebra_pop::float(get("Zebra")),
+				wildebeest_pop::float(get("Wildebeest")),
+				giraffe_pop::float(get("Giraffe")),
+				pos_x::float(get("X_utm")),
+				pos_y::float(get("Y_utm"))]{
+	//		write "date: "+tmp+". Giraffe pop: " + giraffe_pop;
+	//		count_day <- date(tmp,"EEE MMM dd HH:mm:ss zzz yyyy");//date("05/12/1987",'d/M/yyyy');
+			int year <- replace_regex(tmp,'.* ','') as int;
+			int month <- month_to_int[copy_between(tmp,4,7)];
+			int day <- copy_between(tmp,8,10) as int;
+			count_day <- date([year,month,day]);
+		//	write count_day;
+			location <- {pos_x-259982,pos_y-9672560}; 
+		}
+/*		write min(animal_data collect(each.pos_x)); 
+		write max(animal_data collect(each.pos_x));
+		write "x min "+min(animal_data collect(each.location.x))+" x max "+ max(animal_data collect(each.location.x)); 
+		write "y min "+min(animal_data collect(each.location.y))+" y max "+ max(animal_data collect(each.location.y)); 
+*/			
+		count_dates <- animal_data collect(each.count_day);
+		starting_date <- first(animal_data).count_day;
+		end_date <- first(animal_data).count_day;
 		
+		loop tmp over: count_dates{
+			if tmp < starting_date{
+				starting_date <- tmp;
+			}
+			if tmp > end_date{
+				end_date <- tmp;
+			}
+			
+		}
+		
+		
+//		write min(animal_data collect(each.day)); // min ne marche pas avec date, poster une issue Gama
+		write "Start date: "+starting_date;
+		write "End date: "+end_date;
 	}
 	
-//	  reflex info_date {
-//        write "current_date at cycle " + cycle + " : " + current_date;
-//        if end_date<current_date{
-//        	write "Simulation has ended.";
-//        }
-//        
-//    }
+	  reflex info_date {
+        write "current_date at cycle " + cycle + " : " + current_date;
+        if end_date<current_date{
+        	write "Simulation has ended.";
+        	do halt;
+        }
+        
+    }
 	
 	
 	reflex statistics{
@@ -169,31 +199,35 @@ species grid_cell {
 //	}
 }
 
+/*
+grid cell file: ndvi_asc_file{
+	init {
+		color<- rgb(0,grid_value * 250/10000,0);
+	}
+}*/
 
-//grid cell file: ndvi_asc_file{
-//	init {
-//		color<- rgb(0,grid_value * 250/10000,0);
-//	}
-//}
 
 
-
-//species animal_data{
-//	date day;
-//	map<string,float> pop_count;
-//	float zebra_pop;
-//	float wildebeest_pop;
-//	float giraffe_pop;
-//	string tmp;
-//	
-//	aspect base{
-//		if false {//(day >= current_date) and (day < current_date + step) and (show_animal_data) {
-//			draw circle(sqrt(zebra_pop)*500) color: #red;//species_colormap["Zebra"];
-//			draw circle(sqrt(wildebeest_pop)*500) color: #red;// species_colormap["Wildebeest"];		
-//			draw circle(sqrt(giraffe_pop)*500) color: #red;//species_colormap["Giraffe"];	
-//		}
-//	}
-//}
+species animal_data{
+	date count_day;
+	map<string,float> pop_count;
+	float zebra_pop;
+	float wildebeest_pop;
+	float giraffe_pop;
+	string tmp;
+	
+	float pos_x;
+	float pos_y;
+	
+	aspect base{
+		//if (count_day >= current_date) and (count_day < current_date + step) and (show_animal_data) {
+		if (count_day = count_dates last_with(each <= current_date)) and (show_animal_data) {
+			draw 500 around circle(sqrt(zebra_pop)*500) color: species_colormap["Zebra"];//species_colormap["Zebra"];
+			draw 500 around circle(sqrt(wildebeest_pop)*500) color: species_colormap["Wildebeest"];// species_colormap["Wildebeest"];		
+			draw 500 around circle(sqrt(giraffe_pop)*500) color: species_colormap["Giraffe"];//species_colormap["Giraffe"];	
+		}
+	}
+}
 
 
 experiment simulation type: gui {
@@ -213,11 +247,12 @@ experiment simulation type: gui {
 		
 		display environment{
 			
+	//		grid cell lines: rgb("black") ;
 			species ranch aspect: base;
 			species grid_cell aspect: ndvi;
 			species animal aspect: base;
-//			species animal_data aspect: base;
-	//		grid cell lines: rgb("black") ;
+			species animal_data aspect: base;
+		
 			//species boundary aspect: base;
 		}
 	}
