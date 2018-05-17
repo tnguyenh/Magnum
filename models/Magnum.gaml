@@ -17,8 +17,14 @@ global{
 	file area_shape_file <- file("../includes/gis/kajiado_ranch_2010.shp");
 	file giraffe_shape_file <- file("../includes/gis/Giraffemean.shp");
 	file zebra_wildebeest_file <-file("../includes/gis/WildebeestZebra.shp");
+	
+	// ndvi files
+	file ndvi_folder <-folder("../includes/gis/MODIS_ASCII");
+	list<file> ndvi_files_list;
+	
 	file ndvi_file <- file("../includes/gis/Amboseli_Centroids_NDVI.shp");
-	file ndvi_asc_file <- file("../includes/gis/MODIS_ASCII/mod13q1_ndvi_2000_273.asc");
+	file ndvi_asc_file <- file("../includes/gis/MODIS_ASCII/mod13q1_ndvi_2000_273.txt");
+//	file mntImageRaster <- image_file('../includes/gis/MODIS_FOR_MODEL_RESAMPLE/MOD13Q1_NDVI_2000_273.tif') ;
 //	geometry shape <- envelope(area_shape_file);
 	geometry shape <- envelope(giraffe_shape_file);
 	
@@ -47,7 +53,7 @@ global{
 //		ask cell {		
 //			color <-rgb( (mntImageRaster) at {grid_x,grid_y}) ;
 //		}
-		
+//		
 		
 		create ranch from: area_shape_file with:[name::string(read("R_NAME"))]{
 			self.color <- rnd_color(255);
@@ -77,14 +83,13 @@ global{
 		}
 		
 		create animal_data from: animal_data_file with: 
-				[//day::date(string(get("COUNT")),'d/M/yyyy'), 
+				[
 				tmp::string(get("COUNT")),
 				zebra_pop::float(get("Zebra")),
 				wildebeest_pop::float(get("Wildebeest")),
 				giraffe_pop::float(get("Giraffe")),
 				pos_x::float(get("X_utm")),
 				pos_y::float(get("Y_utm"))]{
-	//		write "date: "+tmp+". Giraffe pop: " + giraffe_pop;
 	//		count_day <- date(tmp,"EEE MMM dd HH:mm:ss zzz yyyy");//date("05/12/1987",'d/M/yyyy');
 			int year <- replace_regex(tmp,'.* ','') as int;
 			int month <- month_to_int[copy_between(tmp,4,7)];
@@ -111,12 +116,22 @@ global{
 			}
 			
 		}
-		
-		
 //		write min(animal_data collect(each.day)); // min ne marche pas avec date, poster une issue Gama
 		write "Start date: "+starting_date;
 		write "End date: "+end_date;
+		
+		//matrix matr <- matrix(ndvi_asc_file.contents);
+	//	write length(matr);
+		list<string> tmp <- ndvi_folder.contents; // does not work without that temporary variable ????
+		write first(tmp);
+		ndvi_files_list <-  tmp collect(file(string(ndvi_folder)+"\\"+each)) where (each.extension="txt");	
+		write ndvi_files_list;
+	
 	}
+	
+	
+	
+	
 	
 	  reflex info_date {
         write "current_date at cycle " + cycle + " : " + current_date;
@@ -199,12 +214,12 @@ species grid_cell {
 //	}
 }
 
-/*
-grid cell file: ndvi_asc_file{
-	init {
-		color<- rgb(0,grid_value * 250/10000,0);
-	}
-}*/
+
+//grid cell file: ndvi_asc_file{
+//	init {
+//		color<- rgb(0,grid_value * 250/10000,0);
+//	}
+//}
 
 
 
@@ -247,7 +262,7 @@ experiment simulation type: gui {
 		
 		display environment{
 			
-	//		grid cell lines: rgb("black") ;
+//			grid cell lines: rgb("black") ;
 			species ranch aspect: base;
 			species grid_cell aspect: ndvi;
 			species animal aspect: base;
