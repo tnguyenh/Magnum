@@ -14,9 +14,11 @@ global{
 	float step <- 8 #day;
 	
 	file boundary_shape_file <- file("../includes/gis/boundaries.shp");
-	file area_shape_file <- file("../includes/gis/kajiado_ranch_2010.shp");
+	file GR_shape_file <- file("../includes/gis/kajiado_ranch_2010.shp");
 	file giraffe_shape_file <- file("../includes/gis/Giraffemean.shp");
 	file zebra_wildebeest_file <-file("../includes/gis/WildebeestZebra.shp");
+	int grid_width <- 208;
+	int grid_height <- 232;
 	
 	// ndvi files
 	file ndvi_folder <-folder("../includes/gis/MODIS_ASCII");
@@ -24,10 +26,10 @@ global{
 	
 	file ndvi_file <- file("../includes/gis/Amboseli_Centroids_NDVI.shp");
 	file ndvi_asc_file <- file("../includes/gis/MODIS_ASCII/mod13q1_ndvi_2000_273.txt");
-//	file mntImageRaster <- image_file('../includes/gis/MODIS_FOR_MODEL_RESAMPLE/MOD13Q1_NDVI_2000_273.tif') ;
-//	geometry shape <- envelope(area_shape_file);
-	geometry shape <- envelope(giraffe_shape_file);
-	
+	file test_ndvi_asc_file <- file("../includes/gis/MODIS_ASCII/mod13q1_ndvi_2000_273.asc");
+	file mntImageRaster <- image_file('../includes/gis/MODIS_FOR_MODEL_RESAMPLE/MOD13Q1_NDVI_2000_273.tif') ;
+//	geometry shape <- envelope(GR_shape_file);
+	geometry shape <- envelope(boundary_shape_file);
 	
 	list<string> species_list <-["Zebra","Giraffe","Wildebeest"];
 	map<string,rgb> species_colormap <- ["Zebra"::#purple,"Giraffe"::#yellow,"Wildebeest"::#brown];
@@ -55,7 +57,7 @@ global{
 //		}
 //		
 		
-		create ranch from: area_shape_file with:[name::string(read("R_NAME"))]{
+		create ranch from: GR_shape_file with:[name::string(read("R_NAME"))]{
 			self.color <- rnd_color(255);
 		}
 		
@@ -67,8 +69,7 @@ global{
 		create boundary from: boundary_shape_file;
 		
 		ranch_names <- ranch collect(each.name);
-		write ranch_names;
-		write "There are "+ length(ranch_names) + " ranches.";
+		write "There are "+ length(ranch_names) + " ranches: "+ranch_names;
 		
 		create animal from:  giraffe_shape_file with: [density::float(read("Giraffe"))]{
 			species_name <-"Giraffe"; 
@@ -90,19 +91,12 @@ global{
 				giraffe_pop::float(get("Giraffe")),
 				pos_x::float(get("X_utm")),
 				pos_y::float(get("Y_utm"))]{
-	//		count_day <- date(tmp,"EEE MMM dd HH:mm:ss zzz yyyy");//date("05/12/1987",'d/M/yyyy');
 			int year <- replace_regex(tmp,'.* ','') as int;
 			int month <- month_to_int[copy_between(tmp,4,7)];
 			int day <- copy_between(tmp,8,10) as int;
 			count_day <- date([year,month,day]);
-		//	write count_day;
-			location <- {pos_x-259982,pos_y-9672560}; 
 		}
-/*		write min(animal_data collect(each.pos_x)); 
-		write max(animal_data collect(each.pos_x));
-		write "x min "+min(animal_data collect(each.location.x))+" x max "+ max(animal_data collect(each.location.x)); 
-		write "y min "+min(animal_data collect(each.location.y))+" y max "+ max(animal_data collect(each.location.y)); 
-*/			
+
 		count_dates <- animal_data collect(each.count_day);
 		starting_date <- first(animal_data).count_day;
 		end_date <- first(animal_data).count_day;
@@ -126,6 +120,11 @@ global{
 		write first(tmp);
 		ndvi_files_list <-  tmp collect(file(string(ndvi_folder)+"\\"+each)) where (each.extension="txt");	
 		write ndvi_files_list;
+		
+		
+		ask cell {		
+			color <-rgb( (mntImageRaster) at {grid_x,grid_y}) ;
+		}
 	
 	}
 	
@@ -162,6 +161,10 @@ species ranch{
 	aspect base{
 		draw shape color: color;
 	}	
+	
+	aspect borders{
+		draw 200 around shape color: °white;
+	}
 }
 
 species boundary{
@@ -185,7 +188,7 @@ species animal skills:[moving]{
 	}
 	
 	reflex move{
-		do wander speed: 3000.0;// bounds: first(boundary).shape;// bounds: geometry_collection(ranch collect(each.shape));
+		do wander speed: 5 #km/#day;//3000.0;// bounds: first(boundary).shape;// bounds: geometry_collection(ranch collect(each.shape));
 	}
 }
 
@@ -215,11 +218,15 @@ species grid_cell {
 }
 
 
-//grid cell file: ndvi_asc_file{
+//grid cell file: test_ndvi_asc_file{
 //	init {
 //		color<- rgb(0,grid_value * 250/10000,0);
 //	}
 //}
+
+grid cell width: grid_width height: grid_height{
+
+}
 
 
 
@@ -262,13 +269,12 @@ experiment simulation type: gui {
 		
 		display environment{
 			
-//			grid cell lines: rgb("black") ;
-			species ranch aspect: base;
-			species grid_cell aspect: ndvi;
+			grid cell lines: rgb("black") ;
+			species ranch aspect: borders;
+			//species grid_cell aspect: ndvi;
 			species animal aspect: base;
 			species animal_data aspect: base;
-		
-			//species boundary aspect: base;
+		//	species boundary aspect: base;
 		}
 	}
 }
