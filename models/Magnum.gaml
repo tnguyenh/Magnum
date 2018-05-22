@@ -86,7 +86,7 @@ global{
 			species_name<-"Wildebeest";
 		}
 		
-		create springs from:  springs_file with: [conductivity::int(read("CONDUCTIVI"))]{
+		create spring from:  springs_file with: [conductivity::int(read("CONDUCTIVI"))]{
 		}
 		
 		create animal_data from: animal_data_file with: 
@@ -127,7 +127,6 @@ global{
 		write str;
 		string year_string <- replace_regex(str,'^[^_]*',"");
 		write year_string;
-		
 		
 		do load_asc_file(ndvi_asc_file);
 		
@@ -234,8 +233,8 @@ species animal skills:[moving]{
 	ranch my_ranch;
 	cell	my_cell -> {first(agents_overlapping(self) of_species cell)};
 	cell target <- my_cell;	
+	spring spring_target;
 	list<point> trajectory <- [];
-	bool follow <- false;
 	int thirst <- 0; 
 	
 	rgb color;
@@ -247,7 +246,7 @@ species animal skills:[moving]{
 	}
 	
 	
-	reflex move {
+	reflex move when: (thirst <= 5){
     	//if follow{
 			//target.highlighted <- false;
 		//}
@@ -257,10 +256,9 @@ species animal skills:[moving]{
 			target <- potential_targets with_max_of (each.ndvi);
 		}
 		
-		do goto target:target speed:  5 #km/#day;
+		do goto target:target speed:  2 #km/#day;
 		thirst<- thirst + 1;
 		do wander speed: 0.5 #km/#day;
-		
 		//if follow{
 			//target.highlighted <- true;
 			//trajectory <- trajectory + location;
@@ -271,13 +269,18 @@ species animal skills:[moving]{
 	
 	
 	
-	reflex move_to_water when:thirst > 5 {
-		springs target;
-		target<- springs closest_to(self);
-		do goto target: target speed: 5#km/#day;
-		 if(self distance_to target <500#m){
-		 	thirst <-0;}
-		//do wander speed: 5 #km/#day;//3000.0;// bounds: first(boundary).shape;// bounds: geometry_collection(ranch collect(each.shape));
+	reflex move_to_water when: (thirst > 5) {
+		//spring_target <- spring closest_to(self);  // issue: very long
+		spring_target <- first(spring);
+		loop spr over: spring{
+			if self distance_to spr < self distance_to spring_target{
+				spring_target <- spr;
+			}
+		}
+		do goto target: spring_target speed: 2#km/#week;
+		if(self distance_to spring_target < 2#km){
+		 	thirst <-0;
+		}
 	}
 }
 
@@ -345,11 +348,11 @@ grid cell width: grid_dim[0] height: grid_dim[1]{
 }
 
 
-species springs{
+species spring{
 	int conductivity;
 	
 	aspect base{
-		draw circle(500) color: °blue;
+		draw circle(800) color: °blue;
 	}
 }
 
@@ -396,7 +399,7 @@ experiment simulation type: gui {
 			//species grid_cell aspect: ndvi;
 			species animal aspect: base;
 			//species animal_data aspect: base;
-			species springs aspect: base;
+			species spring aspect: base;
 
 		//	species boundary aspect: base;
 		}
