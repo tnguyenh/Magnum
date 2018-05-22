@@ -236,6 +236,7 @@ species animal skills:[moving]{
 	cell target <- my_cell;	
 	list<point> trajectory <- [];
 	bool follow <- false;
+	int thirst <- 0; 
 	
 	rgb color;
 	
@@ -257,7 +258,9 @@ species animal skills:[moving]{
 		}
 		
 		do goto target:target speed:  5 #km/#day;
+		thirst<- thirst + 1;
 		do wander speed: 0.5 #km/#day;
+		
 		//if follow{
 			//target.highlighted <- true;
 			//trajectory <- trajectory + location;
@@ -268,12 +271,14 @@ species animal skills:[moving]{
 	
 	
 	
-	//reflex move{
-		
-		
-		
+	reflex move_to_water when:thirst > 5 {
+		springs target;
+		target<- springs closest_to(self);
+		do goto target: target speed: 5#km/#day;
+		 if(self distance_to target <500#m){
+		 	thirst <-0;}
 		//do wander speed: 5 #km/#day;//3000.0;// bounds: first(boundary).shape;// bounds: geometry_collection(ranch collect(each.shape));
-	//}
+	}
 }
 
 
