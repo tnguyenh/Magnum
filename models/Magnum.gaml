@@ -38,7 +38,6 @@ global{
 	int NODATA_value <- -1;
 	list<int> grid_dim <- load_asc_file_dimensions(ndvi_asc_file);
 	geometry shape <- envelope(boundary_shape_file);
-//	matrix ndvi_matrix <- 0.0 as_matrix({grid_dim[0],grid_dim[1]});
 	
 	list<string> species_list <-["Zebra","Giraffe","Wildebeest"];
 	map<string,rgb> species_colormap <- ["Zebra"::#purple,"Giraffe"::#yellow,"Wildebeest"::#brown];
@@ -179,7 +178,7 @@ global{
 	            			ask cell grid_at {i,j}{
 	            				float tmp2 <- int(tmp[i])/350;
 	            				color <-rgb(0,tmp2,0) ;
-	            				ndvi <- tmp2;
+	            				ndvi <- int(tmp[i]);
 	            			} 
 	            		}
 	            		j <- j + 1;		
