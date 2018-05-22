@@ -20,16 +20,13 @@ global{
 	file springs_file <- file("../includes/gis/springs_magnum.shp");
 	
 	// ndvi files
-	file ndvi_folder <-folder("../includes/gis/MODIS_ASCII");
+	file ndvi_folder <-folder("../includes/gis/ASCII_5k");
 	list<file> ndvi_files_list;
 	
 	file ndvi_file <- file("../includes/gis/Amboseli_Centroids_NDVI.shp");
-	//file ndvi_asc_file <- file("../includes/gis/MODIS_ASCII/mod13q1_ndvi_2000_273.txt");
-//	file test_ndvi_asc_file <- file("../includes/gis/MODIS_ASCII/mod13q1_ndvi_2000_273.asc");
-//	file test_ndvi_asc_file <- grid_file("../includes/gis/MODIS_FOR_MODEL_RESAMPLE/test3_ascii_esri.asc");
-	file ndvi_asc_file <- text_file("../includes/gis/MODIS_FOR_MODEL_RESAMPLE/test3_ascii_esri.asc");
+	//file ndvi_asc_file <- text_file("../includes/gis/MODIS_FOR_MODEL_RESAMPLE/test3_ascii_esri.asc");
+	file ndvi_asc_file <- text_file("../includes/gis/ASCII_5k/mod13q1_ndvi_2000_049.tif.txt");
 	//file mntImageRaster <- image_file('../includes/gis/MODIS_FOR_MODEL_RESAMPLE/MOD13Q1_NDVI_2000_273.tif') ;
-	//file mntImageRaster <- image_file('../includes/gis/MODIS_FOR_MODEL_RESAMPLE/test2.tif') ;
 	int grid_width; //<- mntImageRaster.contents.columns; 
 	int grid_height; //<-  mntImageRaster.contents.rows; 
 	float xllcorner;
@@ -124,9 +121,13 @@ global{
 		write "End date: "+end_date;
 		
 		list<string> tmp <- ndvi_folder.contents; // does not work without that temporary variable ????
-		write first(tmp);
 		ndvi_files_list <-  tmp collect(file(string(ndvi_folder)+"\\"+each)) where (each.extension="txt");	
 		write ndvi_files_list;
+		string str <- replace_regex(first(ndvi_files_list).name,'[.].*',"");
+		write str;
+		string year_string <- replace_regex(str,'^[^_]*',"");
+		write year_string;
+		
 		
 		do load_asc_file(ndvi_asc_file);
 		
@@ -181,7 +182,7 @@ global{
 	            	default {
 	            		loop i from: 0 to: length(tmp)-1{
 	            			ask cell grid_at {i,j}{
-	            				float tmp2 <- int(tmp[i])/350;
+	            				float tmp2 <- int(tmp[i])/20;
 	            				color <-rgb(0,tmp2,0) ;
 	            				ndvi <- float(tmp[i]);
 	            			} 
