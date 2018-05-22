@@ -72,7 +72,6 @@ init {
 				
 }
 
-
 	
 species grass  {
 	grass truc <- grass[331];

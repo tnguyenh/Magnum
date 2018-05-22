@@ -55,7 +55,7 @@ global{
 	list<date> count_dates;
 	date starting_date;
 	date end_date;
-	
+	float neighbours_range <- 20.0#km;
 
 	 
 	
@@ -127,11 +127,13 @@ global{
 		
 		do load_asc_file(ndvi_asc_file);
 		
-//		ask cell {		
-//			ndvi <- (mntImageRaster) at {grid_x,grid_y};
-//		//	write "x: "+grid_x+" "+ndvi;
-//			color <-rgb( (mntImageRaster) at {grid_x,grid_y}) ;
-//		}
+        ask cell {		
+			do  define_neighbours;
+
+	}
+	
+	
+	
 	
 	}
 	
@@ -226,6 +228,11 @@ species animal skills:[moving]{
 	float density <- 0.0;
 	float grazing_efficiency;
 	ranch my_ranch;
+	cell	my_cell -> {first(agents_overlapping(self) of_species cell)};
+	cell target <- my_cell;	
+	list<point> trajectory <- [];
+	bool follow <- false;
+	
 	rgb color;
 	
 	aspect base{
@@ -234,15 +241,47 @@ species animal skills:[moving]{
 		}
 	}
 	
-	reflex move{
-		do wander speed: 5 #km/#day;//3000.0;// bounds: first(boundary).shape;// bounds: geometry_collection(ranch collect(each.shape));
-	}
+	
+	reflex move {
+    	//if follow{
+			//target.highlighted <- false;
+		//}
+    	if (my_cell != nil){
+			list<cell> potential_targets <- my_cell.neighbours;
+			potential_targets <- potential_targets + my_cell;
+			target <- potential_targets with_max_of (each.ndvi);
+		}
+		
+		do goto target:target speed:  5 #km/#day;
+		do wander speed: 0.5 #km/#day;
+		//if follow{
+			//target.highlighted <- true;
+			//trajectory <- trajectory + location;
+		//}		
+    }
+	
+	
+	
+	
+	
+	//reflex move{
+		
+		
+		
+		//do wander speed: 5 #km/#day;//3000.0;// bounds: first(boundary).shape;// bounds: geometry_collection(ranch collect(each.shape));
+	//}
 }
+
+
+
+
 
 species grid_cell {
 	float ndvi <- 0.0;
 	map<string,float> pop_densities<-["Zebra"::0.0,"Giraffe"::0.0,"Wildebeest"::0.0];
 	geometry shape <- square(5#km);
+	bool show_neighbours <- false;
+	list<grid_cell>  neighbours <- [];
 	
 	aspect ndvi{
 		if show_ndvi{
@@ -257,12 +296,24 @@ species grid_cell {
 		}
 	}
 	
+	
+	
+	
+	
+	
+	
 //	reflex compute_pop_densities{
 //		loop sp over: species_list{
 //			pop_densities[sp] <- sum((animal where(each.species_name = sp) overlapping self) accumulate (each.density));
 //		}
 //	}
 }
+
+
+
+
+
+
 
 
 //grid cell file: test_ndvi_asc_file{
@@ -274,7 +325,16 @@ species grid_cell {
 
 grid cell width: grid_dim[0] height: grid_dim[1]{
 	float ndvi <- 0.0;
+	bool highlighted <- false;
+	bool show_neighbours <- false;
+	list<cell>  neighbours <- [];
+	
+	action define_neighbours{
+		neighbours <-  neighbors_of(topology(self),self,8) ;
+	}
+	
 }
+
 
 
 
@@ -319,7 +379,7 @@ experiment simulation type: gui {
 			species ranch aspect: borders;
 			//species grid_cell aspect: ndvi;
 			species animal aspect: base;
-			species animal_data aspect: base;
+			//species animal_data aspect: base;
 		//	species boundary aspect: base;
 		}
 	}
