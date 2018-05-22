@@ -17,7 +17,7 @@ global{
 	file GR_shape_file <- file("../includes/gis/kajiado_ranch_2010.shp");
 	file giraffe_shape_file <- file("../includes/gis/Giraffemean.shp");
 	file zebra_wildebeest_file <-file("../includes/gis/WildebeestZebra.shp");
-	
+	file springs_file <- file("../includes/gis/springs_magnum.shp");
 	
 	// ndvi files
 	file ndvi_folder <-folder("../includes/gis/MODIS_ASCII");
@@ -87,6 +87,9 @@ global{
 		
 		create animal from:  zebra_wildebeest_file with: [density::float(read("Wildebeest"))]{
 			species_name<-"Wildebeest";
+		}
+		
+		create springs from:  springs_file with: [conductivity::int(read("CONDUCTIVI"))]{
 		}
 		
 		create animal_data from: animal_data_file with: 
@@ -178,7 +181,7 @@ global{
 	            			ask cell grid_at {i,j}{
 	            				float tmp2 <- int(tmp[i])/350;
 	            				color <-rgb(0,tmp2,0) ;
-	            				ndvi <- int(tmp[i]);
+	            				ndvi <- float(tmp[i]);
 	            			} 
 	            		}
 	            		j <- j + 1;		
@@ -277,6 +280,13 @@ grid cell width: grid_dim[0] height: grid_dim[1]{
 }
 
 
+species springs{
+	int conductivity;
+	
+	aspect base{
+		draw circle(500) color: °blue;
+	}
+}
 
 species animal_data{
 	date count_day;
@@ -320,6 +330,7 @@ experiment simulation type: gui {
 			//species grid_cell aspect: ndvi;
 			species animal aspect: base;
 			species animal_data aspect: base;
+			species springs aspect: base;
 		//	species boundary aspect: base;
 		}
 	}
