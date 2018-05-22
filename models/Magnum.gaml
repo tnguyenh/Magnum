@@ -17,18 +17,26 @@ global{
 	file GR_shape_file <- file("../includes/gis/kajiado_ranch_2010.shp");
 	file giraffe_shape_file <- file("../includes/gis/Giraffemean.shp");
 	file zebra_wildebeest_file <-file("../includes/gis/WildebeestZebra.shp");
-	int grid_width <- 208;
-	int grid_height <- 232;
+	
 	
 	// ndvi files
 	file ndvi_folder <-folder("../includes/gis/MODIS_ASCII");
 	list<file> ndvi_files_list;
 	
 	file ndvi_file <- file("../includes/gis/Amboseli_Centroids_NDVI.shp");
-	file ndvi_asc_file <- file("../includes/gis/MODIS_ASCII/mod13q1_ndvi_2000_273.txt");
-	file test_ndvi_asc_file <- file("../includes/gis/MODIS_ASCII/mod13q1_ndvi_2000_273.asc");
-	file mntImageRaster <- image_file('../includes/gis/MODIS_FOR_MODEL_RESAMPLE/MOD13Q1_NDVI_2000_273.tif') ;
-//	geometry shape <- envelope(GR_shape_file);
+	//file ndvi_asc_file <- file("../includes/gis/MODIS_ASCII/mod13q1_ndvi_2000_273.txt");
+//	file test_ndvi_asc_file <- file("../includes/gis/MODIS_ASCII/mod13q1_ndvi_2000_273.asc");
+//	file test_ndvi_asc_file <- grid_file("../includes/gis/MODIS_FOR_MODEL_RESAMPLE/test3_ascii_esri.asc");
+	file ndvi_asc_file <- text_file("../includes/gis/MODIS_FOR_MODEL_RESAMPLE/test3_ascii_esri.asc");
+	//file mntImageRaster <- image_file('../includes/gis/MODIS_FOR_MODEL_RESAMPLE/MOD13Q1_NDVI_2000_273.tif') ;
+	//file mntImageRaster <- image_file('../includes/gis/MODIS_FOR_MODEL_RESAMPLE/test2.tif') ;
+	int grid_width; //<- mntImageRaster.contents.columns; 
+	int grid_height; //<-  mntImageRaster.contents.rows; 
+	float xllcorner;
+	float yllcorner;
+	float cellsize;
+	int NODATA_value <- -1;
+	list<int> grid_dim <- load_asc_file_dimensions(ndvi_asc_file);
 	geometry shape <- envelope(boundary_shape_file);
 	
 	list<string> species_list <-["Zebra","Giraffe","Wildebeest"];
@@ -52,10 +60,8 @@ global{
 	 
 	
 	init{		
-//		ask cell {		
-//			color <-rgb( (mntImageRaster) at {grid_x,grid_y}) ;
-//		}
-//		
+		
+		
 		
 		create ranch from: GR_shape_file with:[name::string(read("R_NAME"))]{
 			self.color <- rnd_color(255);
@@ -114,17 +120,18 @@ global{
 		write "Start date: "+starting_date;
 		write "End date: "+end_date;
 		
-		//matrix matr <- matrix(ndvi_asc_file.contents);
-	//	write length(matr);
 		list<string> tmp <- ndvi_folder.contents; // does not work without that temporary variable ????
 		write first(tmp);
 		ndvi_files_list <-  tmp collect(file(string(ndvi_folder)+"\\"+each)) where (each.extension="txt");	
 		write ndvi_files_list;
 		
+		do load_asc_file(ndvi_asc_file);
 		
-		ask cell {		
-			color <-rgb( (mntImageRaster) at {grid_x,grid_y}) ;
-		}
+//		ask cell {		
+//			ndvi <- (mntImageRaster) at {grid_x,grid_y};
+//		//	write "x: "+grid_x+" "+ndvi;
+//			color <-rgb( (mntImageRaster) at {grid_x,grid_y}) ;
+//		}
 	
 	}
 	
@@ -149,6 +156,46 @@ global{
 //		}
 //		write " ";
 	}
+	
+	
+	
+	int load_asc_file(file f){
+		int j <- 0;
+		list<string> tmp; 	
+		
+		loop el over: f {
+            if (el != "") {
+	        	tmp <- split_with(el as string,' ');
+	        	switch tmp[0]{
+	            	match 'ncols' {grid_width <- tmp[1] as int;}
+	            	match 'nrows' {grid_height <- tmp[1] as int;}
+	            	match 'xllcorner' {xllcorner <- tmp[1] as float;}
+	            	match 'yllcorner' {yllcorner <- tmp[1] as float;}
+	            	match 'cellsize' {cellsize <- tmp[1] as float;}
+	            	match 'NODATA_value' {NODATA_value <- tmp[1] as int;}
+	            	default {
+	            		loop i from: 0 to: length(tmp)-1{
+	            			ask cell grid_at {i,j}{
+	            				float tmp2 <- int(tmp[i])/350;
+	            				color <-rgb(0,tmp2,0) ;
+	            				ndvi <- int(tmp[i]);
+	            			} 
+	            		}
+	            		j <- j + 1;		
+	            	}
+	            }
+	        }
+        }
+        
+		return 0;
+	}
+	
+	
+	list<int> load_asc_file_dimensions(file f){
+		return [at(split_with(f[0] as string,' '),1) as int,at(split_with(f[1] as string,' '),1) as int];
+	}
+	
+	
 
 }
 
@@ -219,13 +266,14 @@ species grid_cell {
 
 
 //grid cell file: test_ndvi_asc_file{
+//	int scale <-250;
 //	init {
-//		color<- rgb(0,grid_value * 250/10000,0);
+//		color<- rgb(grid_value/scale,grid_value/scale,grid_value/scale);
 //	}
 //}
 
-grid cell width: grid_width height: grid_height{
-
+grid cell width: grid_dim[0] height: grid_dim[1]{
+	float ndvi <- 0.0;
 }
 
 
@@ -252,9 +300,7 @@ species animal_data{
 }
 
 
-experiment simulation type: gui {
-
-	
+experiment simulation type: gui {	
 	// Define parameters here if necessary
 	parameter "Show NDVI" category:"Display" var: show_ndvi;
 	parameter "Show animal densities" category:"Display" var: show_densities;
@@ -269,7 +315,7 @@ experiment simulation type: gui {
 		
 		display environment{
 			
-			grid cell lines: rgb("black") ;
+			grid cell;// lines: rgb("black") ;
 			species ranch aspect: borders;
 			//species grid_cell aspect: ndvi;
 			species animal aspect: base;
