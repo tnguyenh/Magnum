@@ -389,12 +389,9 @@ experiment simulation type: gui {
 			species ranch aspect: borders;
 			//species grid_cell aspect: ndvi;
 			species animal aspect: base;
-<<<<<<< HEAD
 			//species animal_data aspect: base;
-=======
-			species animal_data aspect: base;
 			species springs aspect: base;
->>>>>>> dedce0a5cd636f7a9771c98d3196ebc0f5d30560
+
 		//	species boundary aspect: base;
 		}
 	}
